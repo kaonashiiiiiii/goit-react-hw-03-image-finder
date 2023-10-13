@@ -5,8 +5,6 @@ const PixabayService = () => {
   const _apiBase = 'https://pixabay.com/api/'
   const _apiKey = '40025638-0e05185563b3cbe783cea860e'
   const _defaultCompleteUrl = `${_apiBase}?key=${_apiKey}`
-  const defaultPage = 1
-  const defaultPerPage = 12
 
   /**
    * transform url with the query params values
