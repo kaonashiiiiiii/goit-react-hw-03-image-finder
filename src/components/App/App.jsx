@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import styles from './app.module.css'
 import PixabayService from 'services/PixabayService'
 import { Button, ImageGallery, Loader, Modal, Searchbar } from 'components'
@@ -8,7 +8,7 @@ const App = () => {
   const [lastSearchedQuery, setLastSearchedQuery] = useState('')
   const [images, setImages] = useState([])
   const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(12)
+  const [perPage] = useState(12)
   const { getImages, loading, error } = PixabayService()
   const [isOpen, setIsOpen] = useState(false)
   const [currentImage, setCurrentImage] = useState(null)
@@ -49,10 +49,12 @@ const App = () => {
   }
 
   const spinner = loading ? <Loader /> : null
+  const errorMessage = error ? <h2>Error occured</h2> : null 
   return (
     <div className={styles.App}>
       <Modal isOpen={isOpen} closeModal={closeModal} currentImage={currentImage}/>
       <Searchbar query={query} setQuery={setQuery} doSearch={doSearch}/>
+      {errorMessage}
       {spinner}
       <ImageGallery imageList={images} openModal={openModal}/>
       <div className={styles.flexCentered}>
