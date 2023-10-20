@@ -1,67 +1,99 @@
-import React, { useState } from 'react'
+import { Component } from 'react'
 import styles from './app.module.css'
-import PixabayService from 'services/PixabayService'
+import { getImages } from 'api/pixabay.api'
 import { Button, ImageGallery, Loader, Modal, Searchbar } from 'components'
 
-const App = () => {
-  const [query, setQuery] = useState('')
-  const [lastSearchedQuery, setLastSearchedQuery] = useState('')
-  const [images, setImages] = useState([])
-  const [page, setPage] = useState(1)
-  const [perPage] = useState(12)
-  const { getImages, loading, error } = PixabayService()
-  const [isOpen, setIsOpen] = useState(false)
-  const [currentImage, setCurrentImage] = useState(null)
+class App extends Component {
+  state = {
+    query: '',
+    loading: false,
+    error: null,
+    lastSearchedQuery: '',
+    images: [],
+    page: 1,
+    perPage: 12,
+    isModalOpen: false,
+    currentImage: null
+  }
 
-
-  async function doSearch (e) {
+  doSearch = async (e) => {
     e.preventDefault()
+    try {
+      this.setState({
+        loading: true
+      })
+      const params = {
+        page: 1,
+        per_page: this.state.perPage,
+        q: this.state.query
+      }
+      const data = await getImages(params)
+      this.setState({
+        page: 1,
+        images: data,
+        lastSearchedQuery: this.state.query,
+        loading: false
+      })
+    } catch (e) {
+      this.setState({
+        error: true,
+      })
+    } finally {
+      this.setState({
+        loading: false,
+      })
+    }
+  }
+
+  loadMore = async () => {
     const params = {
-      page: 1,
-      per_page: perPage,
-      q: query
+      q: this.state.lastSearchedQuery,
+      perPage: this.state.perPage,
+      page: this.state.page + 1
     }
     const data = await getImages(params)
-    setPage(1)
-    setImages(data)
-    setLastSearchedQuery(query)
+    this.setState({
+      images: [...this.state.images, ...data],
+      page: this.state.page + 1
+    })
   }
 
-  async function loadMore () {
-    const params = {
-      q: lastSearchedQuery,
-      perPage,
-      page: page + 1
-    }
-    const data = await getImages(params)
-    setImages([...images, ...data])
-    setPage(prev => prev + 1)
+  openModal = (image) => {
+    this.setState({
+      currentImage: image,
+      isModalOpen: true
+    })
   }
 
-  function openModal (image) {
-    setIsOpen(true)
-    setCurrentImage(image)
+  closeModal = () => {
+    this.setState({
+      currentImage: null,
+      isModalOpen: false
+    })
   }
 
-  function closeModal () {
-    setIsOpen(false)
-    setCurrentImage(null)
+  setSpecificState = (value, prop) => {
+    this.setState({
+      [prop]: value
+    })
   }
 
-  const spinner = loading ? <Loader /> : null
-  const errorMessage = error ? <h2>Error occured</h2> : null 
-  return (
-    <div className={styles.App}>
-      <Modal isOpen={isOpen} closeModal={closeModal} currentImage={currentImage}/>
-      <Searchbar query={query} setQuery={setQuery} doSearch={doSearch}/>
-      {errorMessage}
-      {spinner}
-      <ImageGallery imageList={images} openModal={openModal}/>
-      <div className={styles.flexCentered}>
-        { images.length > 0 && <Button title="Load more" onClick={loadMore}/> }
+  render () {
+    const spinner = this.state.loading ? <Loader /> : null
+    const errorMessage = this.state.error ? <h2>Error occured</h2> : null 
+    return (
+      <div className={styles.App}>
+        <Modal isOpen={this.state.isModalOpen} closeModal={this.closeModal} currentImage={this.state.currentImage}/>
+        <Searchbar query={this.state.query} setQuery={this.setSpecificState} doSearch={this.doSearch}/>
+        {errorMessage}
+        {spinner}
+        <ImageGallery imageList={this.state.images} openModal={this.openModal}/>
+        <div className={styles.flexCentered}>
+          { this.state.images.length > 0 && <Button title="Load more" onClick={this.loadMore}/> }
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 }
 
 export default App

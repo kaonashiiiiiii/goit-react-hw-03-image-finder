@@ -17,7 +17,7 @@ const Searchbar = (props) => {
           autoFocus
           placeholder="Search images and photos"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => setQuery(e.target.value, 'query')}
         />
       </form>
     </header>
