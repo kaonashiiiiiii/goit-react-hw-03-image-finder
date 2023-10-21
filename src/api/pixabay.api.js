@@ -9,7 +9,7 @@ const _defaultCompleteUrl = `${_apiBase}?key=${_apiKey}`
  */
 function transformUrlString (paramsEntries, url) {
   paramsEntries.forEach((item) => {
-    let [key, value ] = item
+    let [key, value] = item
     if (key === 'query') key = 'q'
     let strToInject = `${key}=${value}`
     url += `&${strToInject}`
@@ -26,7 +26,6 @@ function injectQueryParamsIntoUrl (paramsObject={}) {
   let resultUrl = `${_defaultCompleteUrl}&image_type=photo&orientation=horizontal`
   const entries = Object.entries(paramsObject)
   if (entries) {
-    resultUrl = 
     resultUrl = transformUrlString(entries, resultUrl)
   }
   return resultUrl
@@ -51,5 +50,8 @@ export async function getImages (paramsObject) {
     throw new Error(`Could not fetch ${url}, status: ${response.status}`);
   }
   const data = await response.json();
-  return transformImageData(data.hits)
+  return {
+    hits: transformImageData(data.hits),
+    totalHits: data.totalHits,
+  }
 }

@@ -8,32 +8,40 @@ class App extends Component {
     query: '',
     loading: false,
     error: null,
-    lastSearchedQuery: '',
     images: [],
     page: 1,
     perPage: 12,
     isModalOpen: false,
-    currentImage: null
+    currentImage: null,
+    totalHits: 0,
+    result: null
   }
 
-  doSearch = async (e) => {
-    e.preventDefault()
+  componentDidUpdate(_, prevState) {
+    if (prevState.query !== this.state.query || prevState.page !== this.state.page) {
+      this.doSearch()
+    }
+  }
+
+  doSearch = async () => {
     try {
       this.setState({
         loading: true
       })
       const params = {
-        page: 1,
+        page: this.state.page,
         per_page: this.state.perPage,
         q: this.state.query
       }
       const data = await getImages(params)
-      this.setState({
-        page: 1,
-        images: data,
-        lastSearchedQuery: this.state.query,
-        loading: false
-      })
+      if (data.hits.length === 0) {
+        return
+      }
+      this.setState(prevState => ({
+        images: [...prevState.images, ...data.hits],
+        result: this.state.page * this.state.perPage,
+        totalHits: data.totalHits,
+      }));
     } catch (e) {
       this.setState({
         error: true,
@@ -45,17 +53,8 @@ class App extends Component {
     }
   }
 
-  loadMore = async () => {
-    const params = {
-      q: this.state.lastSearchedQuery,
-      perPage: this.state.perPage,
-      page: this.state.page + 1
-    }
-    const data = await getImages(params)
-    this.setState({
-      images: [...this.state.images, ...data],
-      page: this.state.page + 1
-    })
+  loadMore =  () => {
+    this.setState(({ page }) => ({ page: page + 1 }));
   }
 
   openModal = (image) => {
@@ -72,6 +71,14 @@ class App extends Component {
     })
   }
 
+  initInputData = (query) => {
+    this.setState({
+      query,
+      images: [],
+      page: 1,
+    });
+  }
+
   setSpecificState = (value, prop) => {
     this.setState({
       [prop]: value
@@ -79,17 +86,19 @@ class App extends Component {
   }
 
   render () {
-    const spinner = this.state.loading ? <Loader /> : null
-    const errorMessage = this.state.error ? <h2>Error occured</h2> : null 
+    const { loading, error, images, result, totalHits } = this.state
+    const spinner = loading ? <Loader /> : null
+    const errorMessage = error ? <h2>Error occured</h2> : null
+    const showLoadMoreButton = images.length > 0 && result < totalHits
     return (
       <div className={styles.App}>
         <Modal isOpen={this.state.isModalOpen} closeModal={this.closeModal} currentImage={this.state.currentImage}/>
-        <Searchbar query={this.state.query} setQuery={this.setSpecificState} doSearch={this.doSearch}/>
+        <Searchbar onSubmit={this.initInputData}/>
         {errorMessage}
         {spinner}
         <ImageGallery imageList={this.state.images} openModal={this.openModal}/>
         <div className={styles.flexCentered}>
-          { this.state.images.length > 0 && <Button title="Load more" onClick={this.loadMore}/> }
+          { showLoadMoreButton &&  <Button title="Load more" onClick={this.loadMore}/> }
         </div>
       </div>
     )
