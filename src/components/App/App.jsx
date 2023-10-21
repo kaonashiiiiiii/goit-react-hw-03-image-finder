@@ -35,6 +35,7 @@ class App extends Component {
       }
       const data = await getImages(params)
       if (data.hits.length === 0) {
+        alert('No images were found by this query!')
         return
       }
       this.setState(prevState => ({
